@@ -1,47 +1,39 @@
-//Ui elements
-let form=document.querySelector("#book-form")
-let bookList=document.querySelector("#book-list")
+// Get the UI elements
+let form = document.querySelector('#book-form');
+let booklist = document.querySelector('#book-list');
 
 
-
-
-
-
-//Book class
-
-class Book{
-    constructor(title,author,isbn){
-        this.title=title
-        this.author=author
-        this.isbn=isbn
+// Book Class
+class Book {
+    constructor(title, author, isbn) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
     }
 }
 
-//UI class
-class UI{
-    
-    addToBookList(book){
-        let bookList=document.querySelector("#book-list");
-        let row=document.createElement("tr");
-
-        row.innerHTML=`
+// UI Class
+class UI {
+    static addToBooklist(book) {
+        let list = document.querySelector('#book-list');
+        let row = document.createElement('tr');
+        row.innerHTML = `
         <td>${book.title}</td>
         <td>${book.author}</td>
-        <td>${book.title}</td>
-        <td><a class="delete" href="#">X</td>
-        `
-        bookList.appendChild(row)
+        <td>${book.isbn}</td>
+        <td><a href='#' class="delete">X</a></td>`;
 
-
+        list.appendChild(row);
 
     }
-    
-    clearField(title,author,isbn){
-    document.querySelector("#title").value="";
-    document.querySelector("#author").value="";
-    document.querySelector("#isbn").value="";
+
+    static clearFields() {
+        document.querySelector("#title").value = '';
+        document.querySelector("#author").value = '';
+        document.querySelector("#isbn").value = '';
     }
-    showAlert(message, className) {
+
+    static showAlert(message, className) {
         let div = document.createElement('div');
         div.className = `alert ${className}`;
         div.appendChild(document.createTextNode(message));
@@ -53,46 +45,95 @@ class UI{
         setTimeout(() => {
             document.querySelector('.alert').remove();
         }, 3000);
-
     }
-    deleteFromBook(target) {
-    if (target.hasAttribute('href')) {
-        target.parentElement.parentElement.remove();
-        // Store.removeBook(target.parentElement.previousElementSibling.textContent.trim());
-        this.showAlert('Book Removed!', 'success');
+
+    static deleteFromBook(target) {
+        if (target.hasAttribute('href')) {
+            target.parentElement.parentElement.remove();
+            Store.removeBook(target.parentElement.previousElementSibling.textContent.trim());
+            UI.showAlert('Book Removed!', 'success');
+        }
     }
 }
+
+// Local Storage Class
+class Store {
+    static getBooks() {
+        let books;
+        if (localStorage.getItem('books') === null) {
+            books = [];
+        } else {
+            books = JSON.parse(localStorage.getItem('books'));
+        }
+        return books;
+    }
+
+    static addBook(book) {
+        let books = Store.getBooks();
+        books.push(book);
+
+        localStorage.setItem('books', JSON.stringify(books));
+    }
+
+    static displayBooks() {
+        let books = Store.getBooks();
+
+        books.forEach(book => {
+            UI.addToBooklist(book);
+        });
+    }
+
+    static removeBook(isbn) {
+        let books = Store.getBooks();
+
+        books.forEach((book, index) => {
+            if(book.isbn === isbn) {
+                books.splice(index, 1);
+            }
+        })
+
+        localStorage.setItem('books', JSON.stringify(books));
+    }
 }
-//add book
-form.addEventListener('submit',newbook)
 
-//delete book
-bookList.addEventListener('click',removeBook)
-function newbook(e){
-    let title=document.querySelector("#title").value;
-    let author=document.querySelector("#author").value;
-    let isbn=document.querySelector("#isbn").value;
+// Add Event Listener
+form.addEventListener('submit', newBook);
+booklist.addEventListener('click', removeBook);
+document.addEventListener('DOMContentLoaded', Store.displayBooks());
 
-    let book=new Book(title,author,isbn);
-    let ui=new UI();
+
+// Define functions
+
+function newBook(e) {
+    let title = document.querySelector("#title").value,
+        author = document.querySelector("#author").value,
+        isbn = document.querySelector("#isbn").value;
+
+
+
     if (title === '' || author === '' || isbn === '') {
 
-        ui.showAlert("Please fill all the fields!", "error");
-    }
-    else{
-        
-    ui.addToBookList(book)
-    ui.clearField(title,author,isbn)
-    ui.showAlert("Book Added!", "success");
+        UI.showAlert("Please fill all the fields!", "error");
+    } else {
+
+        let book = new Book(title, author, isbn);
+
+        UI.addToBooklist(book);
+
+        UI.clearFields();
+
+        UI.showAlert("Book Added!", "success");
+
+        Store.addBook(book);
     }
 
 
-    e.preventDefault()
+
+
+    e.preventDefault();
 }
 
-function removeBook(e){
-    e.preventDefault()
-    let ui=new UI();
-    ui.deleteFromBook(e.target);
+function removeBook(e) {
+    UI.deleteFromBook(e.target);
     e.preventDefault();
 }
